@@ -12,7 +12,7 @@ var Section = (function() {
     var newThis = this.deepCopy();
 
     if (newThis.finish >= other.start) {
-      newThis.words = newThis.words.slice(0, newThis.words.length - (other.start - newThis.finish));
+      newThis.words = newThis.words.slice(0, newThis.words.length - (newThis.finish - other.start));
     } else {
       newThis.words.push('...');
     }
