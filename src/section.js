@@ -52,8 +52,8 @@ var Section = (function() {
     var newSection = new Section();
     newSection.start = this.start;
     newSection.finish = this.finish;
-    newSection.words = this.words;
-    newSection.indicies = this.indicies;
+    newSection.words = this.words.slice(0);
+    newSection.indicies = this.indicies.slice(0);
     return newSection;
   };
 
