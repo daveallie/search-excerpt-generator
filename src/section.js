@@ -1,23 +1,37 @@
 var Section = (function() {
   var Section = function(index, padding, words) {
-    this.start = Math.max(index - padding, 0);
-    this.finish = Math.min(index + padding + 1, words.length);
-    this.words = words.slice(this.start, this.finish);
-    this.indicies = [index - this.start];
+    if (typeof index !== 'undefined') {
+      this.start = Math.max(index - padding, 0);
+      this.finish = Math.min(index + padding + 1, words.length);
+      this.words = words.slice(this.start, this.finish);
+      this.indicies = [index - this.start];
+    }
   };
 
   Section.prototype.join = function(other) {
-    if (this.finish >= other.start) {
-      this.words.slice(0, this.words.length - (other.start - this.finish));
+    var newThis = this.deepCopy();
+
+    if (newThis.finish >= other.start) {
+      newThis.words = newThis.words.slice(0, newThis.words.length - (other.start - newThis.finish));
     } else {
-      this.words.push('...');
+      newThis.words.push('...');
     }
 
     for (var i = 0, max = other.indicies; i < max; i++) {
-      this.indicies.push(other.indicies[i] + this.words.length);
+      newThis.indicies.push(other.indicies[i] + newThis.words.length);
     }
-    this.words = this.words.concat(other.words);
-    this.finish = other.finish;
+    newThis.words = newThis.words.concat(other.words);
+    newThis.finish = other.finish;
+
+    return newThis;
+  };
+
+  Section.prototype.length = function() {
+    var total = this.words.length - 1; // all the spaces
+    for (var i = 0, max = this.words.length; i < max; i++) {
+      total += this.words[i].length;
+    }
+    return total;
   };
 
   Section.prototype.toHTML = function() {
@@ -32,6 +46,15 @@ var Section = (function() {
     }
 
     return output.trim() + ' ...';
+  };
+
+  Section.prototype.deepCopy = function() {
+    var newSection = new Section();
+    newSection.start = this.start;
+    newSection.finish = this.finish;
+    newSection.words = this.words;
+    newSection.indicies = this.indicies;
+    return newSection;
   };
 
   return Section;

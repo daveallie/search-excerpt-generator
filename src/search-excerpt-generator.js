@@ -5,10 +5,15 @@ var SearchExcerptGenerator = (function() {
     }
 
     var words = body.match(/\S+/g) || [],
-        section = new Section(indicies[0], 4, words);
+        section = new Section(indicies[0], 4, words),
+        newSection;
 
     for (var i = 1, max = indicies.length; i < max; i++) {
-      section.join(new Section(indicies[i], 4, words));
+      newSection = section.join(new Section(indicies[i], 4, words));
+      if (newSection.length() > maxLength) {
+        break;
+      }
+      section = newSection;
     }
 
     return section.toHTML();
@@ -60,6 +65,8 @@ var SearchExcerptGenerator = (function() {
 
     return excerptFromArr(body, indicies, this.maxLength);
   };
+
+  return SearchExcerptGenerator;
 })();
 
 window.SearchExcerptGenerator = SearchExcerptGenerator;
