@@ -1,5 +1,5 @@
 /*!
- * search-excerpt-generator v0.1.2
+ * search-excerpt-generator v0.1.3
  * https://github.com/daveallie/search-excerpt-generator
  */
 
@@ -483,8 +483,8 @@ var Section = (function() {
     var newSection = new Section();
     newSection.start = this.start;
     newSection.finish = this.finish;
-    newSection.words = this.words;
-    newSection.indicies = this.indicies;
+    newSection.words = this.words.slice(0);
+    newSection.indicies = this.indicies.slice(0);
     return newSection;
   };
 
