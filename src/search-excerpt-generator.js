@@ -1,15 +1,15 @@
 var SearchExcerptGenerator = (function() {
-  var excerptFromArr = function(body, indicies, maxLength) {
+  var excerptFromArr = function(body, indicies, maxLength, contextOptions) {
     if (indicies.length === 0) {
       return getWholeWordsWithMaxChars(body, maxLength - 3) + "...";
     }
 
     var words = body.match(/\S+/g) || [],
-        section = new Section(indicies[0], 4, words),
+        section = new Section(indicies[0], words, contextOptions),
         newSection;
 
     for (var i = 1, max = indicies.length; i < max; i++) {
-      newSection = section.join(new Section(indicies[i], 4, words));
+      newSection = section.join(new Section(indicies[i], words, contextOptions));
       if (newSection.length() > maxLength) {
         break;
       }
@@ -19,7 +19,7 @@ var SearchExcerptGenerator = (function() {
     return section.toHTML();
   };
 
-  var SearchExcerptGenerator = function(query, maxLength) {
+  var SearchExcerptGenerator = function(query, maxLength, contextOptions) {
     var tokens = query.toLowerCase().match(/\S+/g) || [];
     var newTokens = [], newToken, splitTokens;
     for (var i = 0, max = tokens.length; i < max; i++) {
@@ -35,6 +35,7 @@ var SearchExcerptGenerator = (function() {
       }
     }
 
+    this.contextOptions = extend({words: 4, regex: null}, contextOptions);
     this.tokens = newTokens;
     this.maxLength = maxLength;
   };
@@ -63,7 +64,7 @@ var SearchExcerptGenerator = (function() {
       }
     }
 
-    return excerptFromArr(body, indicies, this.maxLength);
+    return excerptFromArr(body, indicies, this.maxLength, this.contextOptions);
   };
 
   return SearchExcerptGenerator;
