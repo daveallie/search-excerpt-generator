@@ -28,7 +28,7 @@ var Section = (function() {
 
         var tmpIndex = words.slice(0, index).reverse().findIndex(function(el) {return el.match(regex.start);});
         if (tmpIndex > -1) {
-          this.start = index - tmpIndex + (include.start ? 1 : 0);
+          this.start = index - tmpIndex - (include.start ? 1 : 0);
         } else {
           this.start = 0;
         }
