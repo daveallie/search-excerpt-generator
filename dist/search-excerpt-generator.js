@@ -1,5 +1,5 @@
 /*!
- * search-excerpt-generator v0.1.3
+ * search-excerpt-generator v0.2.0
  * https://github.com/daveallie/search-excerpt-generator
  */
 
@@ -7,6 +7,41 @@
 ;(function(window){
 'use strict';
 // jshint ignore: end
+
+var extend = function() {
+  for (var i = 1; i < arguments.length; i++) {
+    for (var key in arguments[i]) {
+      if (arguments[i].hasOwnProperty(key)) {
+        arguments[0][key] = arguments[i][key];
+      }
+    }
+  }
+  return arguments[0];
+};
+
+if (!Array.prototype.findIndex) {
+  Array.prototype.findIndex = function(predicate) {
+    'use strict';
+    if (this === null || this === undefined) {
+      throw new TypeError('Array.prototype.findIndex called on null or undefined');
+    }
+    if (typeof predicate !== 'function') {
+      throw new TypeError('predicate must be a function');
+    }
+    var list = Object(this);
+    var length = list.length >>> 0;
+    var thisArg = arguments[1];
+    var value;
+
+    for (var i = 0; i < length; i++) {
+      value = list[i];
+      if (predicate.call(thisArg, value, i, list)) {
+        return i;
+      }
+    }
+    return -1;
+  };
+}
 
 // http://tartarus.org/~martin/PorterStemmer/js.txt
 var stemmer = (function(){
@@ -187,128 +222,7 @@ var stemmer = (function(){
 })();
 
 var stopWordFilter = (function() {
-  var stopWords = [
-    "",
-    "a",
-    "able",
-    "about",
-    "across",
-    "after",
-    "all",
-    "almost",
-    "also",
-    "am",
-    "among",
-    "an",
-    "and",
-    "any",
-    "are",
-    "as",
-    "at",
-    "be",
-    "because",
-    "been",
-    "but",
-    "by",
-    "can",
-    "cannot",
-    "could",
-    "dear",
-    "did",
-    "do",
-    "does",
-    "either",
-    "else",
-    "ever",
-    "every",
-    "for",
-    "from",
-    "get",
-    "got",
-    "had",
-    "has",
-    "have",
-    "he",
-    "her",
-    "hers",
-    "him",
-    "his",
-    "how",
-    "however",
-    "i",
-    "if",
-    "in",
-    "into",
-    "is",
-    "it",
-    "its",
-    "just",
-    "least",
-    "let",
-    "like",
-    "likely",
-    "may",
-    "me",
-    "might",
-    "most",
-    "must",
-    "my",
-    "neither",
-    "no",
-    "nor",
-    "not",
-    "of",
-    "off",
-    "often",
-    "on",
-    "only",
-    "or",
-    "other",
-    "our",
-    "own",
-    "rather",
-    "said",
-    "say",
-    "says",
-    "she",
-    "should",
-    "since",
-    "so",
-    "some",
-    "than",
-    "that",
-    "the",
-    "their",
-    "them",
-    "then",
-    "there",
-    "these",
-    "they",
-    "this",
-    "tis",
-    "to",
-    "too",
-    "twas",
-    "us",
-    "wants",
-    "was",
-    "we",
-    "were",
-    "what",
-    "when",
-    "where",
-    "which",
-    "while",
-    "who",
-    "whom",
-    "why",
-    "will",
-    "with",
-    "would",
-    "yet",
-    "you",
-    "your"
-  ];
+  var stopWords = "a able about across after all almost also am among an and any are as at be because been but by can cannot could dear did do does either else ever every for from get got had has have he her hers him his how however i if in into is it its just least let like likely may me might most must my neither no nor not of off often on only or other our own rather said say says she should since so some than that the their them then there these they this tis to too twas us wants was we were what when where which while who whom why will with would yet you your".split(" ");
   return function(word) {
     if (word && stopWords.indexOf(word) === -1) {
       return word;
@@ -357,17 +271,17 @@ var getWholeWordsWithMaxChars = function(string, maxLength) {
 };
 
 var SearchExcerptGenerator = (function() {
-  var excerptFromArr = function(body, indicies, maxLength) {
+  var excerptFromArr = function(body, indicies, maxLength, contextOptions) {
     if (indicies.length === 0) {
       return getWholeWordsWithMaxChars(body, maxLength - 3) + "...";
     }
 
     var words = body.match(/\S+/g) || [],
-        section = new Section(indicies[0], 4, words),
+        section = new Section(indicies[0], words, contextOptions),
         newSection;
 
     for (var i = 1, max = indicies.length; i < max; i++) {
-      newSection = section.join(new Section(indicies[i], 4, words));
+      newSection = section.join(new Section(indicies[i], words, contextOptions));
       if (newSection.length() > maxLength) {
         break;
       }
@@ -377,7 +291,7 @@ var SearchExcerptGenerator = (function() {
     return section.toHTML();
   };
 
-  var SearchExcerptGenerator = function(query, maxLength) {
+  var SearchExcerptGenerator = function(query, maxLength, contextOptions) {
     var tokens = query.toLowerCase().match(/\S+/g) || [];
     var newTokens = [], newToken, splitTokens;
     for (var i = 0, max = tokens.length; i < max; i++) {
@@ -393,6 +307,7 @@ var SearchExcerptGenerator = (function() {
       }
     }
 
+    this.contextOptions = extend({words: 4, regex: null}, contextOptions);
     this.tokens = newTokens;
     this.maxLength = maxLength;
   };
@@ -421,7 +336,7 @@ var SearchExcerptGenerator = (function() {
       }
     }
 
-    return excerptFromArr(body, indicies, this.maxLength);
+    return excerptFromArr(body, indicies, this.maxLength, this.contextOptions);
   };
 
   return SearchExcerptGenerator;
@@ -430,30 +345,73 @@ var SearchExcerptGenerator = (function() {
 window.SearchExcerptGenerator = SearchExcerptGenerator;
 
 var Section = (function() {
-  var Section = function(index, padding, words) {
+  var Section = function(index, words, contextOptions) {
     if (typeof index !== 'undefined') {
-      this.start = Math.max(index - padding, 0);
-      this.finish = Math.min(index + padding + 1, words.length);
+      if (contextOptions.regex) {
+        var regex = {},
+            include = {};
+
+        if (contextOptions.regex.start && contextOptions.regex.finish) {
+          ['start', 'finish'].forEach(function(el) {
+            if (contextOptions.regex[el].hasOwnProperty('regex')) {
+              regex[el] = contextOptions.regex[el].regex;
+              include[el] = contextOptions.regex[el].include;
+              include[el] = typeof include[el] === 'undefined' ? true : include[el];
+            } else {
+              regex[el] = contextOptions.regex[el];
+              include[el] = true;
+            }
+          });
+        } else if (contextOptions.regex.hasOwnProperty('regex')) {
+          regex.start = regex.finish = contextOptions.regex.regex;
+          include.start = contextOptions.regex.include;
+          include.start = typeof include.start === 'undefined' ? true : include.start;
+          include.finish = include.start;
+        } else {
+          regex.start = regex.finish = contextOptions.regex;
+          include.start = include.finish = true;
+        }
+
+        var tmpIndex = words.slice(0, index).reverse().findIndex(function(el) {return el.match(regex.start);});
+        if (tmpIndex > -1) {
+          this.start = index - tmpIndex - (include.start ? 1 : 0);
+        } else {
+          this.start = 0;
+        }
+
+        tmpIndex = words.slice(index + 1).findIndex(function(el) {return el.match(regex.finish);});
+        if (tmpIndex > -1) {
+          this.finish = index + 1 + tmpIndex + (include.finish ? 1 : 0);
+        } else {
+          this.finish = words.length;
+        }
+      } else {
+        this.start = Math.max(index - contextOptions.words, 0);
+        this.finish = Math.min(index + contextOptions.words + 1, words.length);
+      }
+
       this.words = words.slice(this.start, this.finish);
       this.indicies = [index - this.start];
     }
   };
 
-  Section.prototype.join = function(other) {
-    var newThis = this.deepCopy();
-
-    if (newThis.finish >= other.start) {
-      newThis.words = newThis.words.slice(0, newThis.words.length - (newThis.finish - other.start));
+  Section.prototype.append = function(other) {
+    if (this.finish >= other.start) {
+      this.words = this.words.slice(0, this.words.length - (this.finish - other.start));
     } else {
-      newThis.words.push('...');
+      this.words.push('...');
     }
 
     for (var i = 0, max = other.indicies; i < max; i++) {
-      newThis.indicies.push(other.indicies[i] + newThis.words.length);
+      this.indicies.push(other.indicies[i] + this.words.length);
     }
-    newThis.words = newThis.words.concat(other.words);
-    newThis.finish = other.finish;
+    this.words = this.words.concat(other.words);
+    this.finish = other.finish;
+  };
 
+  Section.prototype.join = function(other) {
+    var newThis = this.deepCopy();
+    newThis.append(other);
     return newThis;
   };
 
